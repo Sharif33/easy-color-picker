@@ -26,7 +26,7 @@ export const ColorHistoryPanel = ({
           </button>
         </div>
         <div className="flex flex-wrap items-center justify-center">
-          {Array.from({ length: Math.max(colorHistory.length, 63) }).map(
+          {Array.from({ length: Math.max(colorHistory.length, 39) }).map(
             (_, index) => {
               const color = colorHistory[index]
               return (

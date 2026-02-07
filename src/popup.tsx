@@ -2,10 +2,17 @@ import { useCallback, useEffect, useState } from "react"
 
 import "~style.css"
 
+import {
+  AlertTriangle,
+  BrushCleaning,
+  ChevronDown,
+  ChevronRight,
+  Disc,
+  Pipette
+} from "lucide-react"
+
 import { ColorHistoryPanel } from "./features/color-history/ColorHistoryPanel"
 import { useColorHistory } from "./features/color-history/useColorHistory"
-import { AlertTriangle } from "lucide-react"
-import { isRestrictedUrl } from "./utils/restricted-urls"
 import { ColorPickerPanel } from "./features/color-picker/ColorPickerPanel"
 import { useColorPicker } from "./features/color-picker/useColorPicker"
 import { pickOutsideBrowserColor } from "./features/pick-outside-browser-color"
@@ -14,12 +21,14 @@ import { AnalyzerPanel } from "./features/webpage-color-analyzer/AnalyzerPanel"
 import { useWebpageAnalyzer } from "./features/webpage-color-analyzer/useWebpageAnalyzer"
 import { colorToHsv, getColorFromHsv, hsvToRgb } from "./popup/color-utils"
 import type { ColorEntry } from "./popup/types"
+import { isRestrictedUrl } from "./utils/restricted-urls"
 
 function IndexPopup() {
   const [currentColor, setCurrentColor] = useState<ColorEntry | null>(null)
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [outsidePickActive, setOutsidePickActive] = useState(false)
   const [pageRestricted, setPageRestricted] = useState(false)
+  const [expandedFeatures, setExpandedFeatures] = useState<string | null>(null)
   const colorPicker = useColorPicker({ h: 220, s: 66, v: 16 })
 
   const getCurrentColorFromHsv = useCallback((): ColorEntry => {
@@ -164,6 +173,77 @@ function IndexPopup() {
     colorPicker.hsv.v
   )
 
+  const FEATURES = [
+    {
+      label: "Pick Active Page Color",
+      icon: Pipette,
+      onClick: activatePicker,
+      disabled: pageRestricted
+    },
+    {
+      label: "Pick Outside Browser Color",
+      icon: Disc,
+      onClick: activateOutsidePicker,
+      disabled: false
+    },
+    {
+      label: "Analyze Webpage Colors",
+      icon: BrushCleaning,
+      onClick: analyzer.analyze,
+      disabled: analyzer.isAnalyzing || pageRestricted
+    },
+    {
+      label: "Color Picker",
+      icon: expandedFeatures === "color-picker" ? ChevronDown : ChevronRight,
+      onClick: () => {
+        setExpandedFeatures(
+          expandedFeatures === "color-picker" ? null : "color-picker"
+        )
+      },
+      disabled: false
+    },
+    {
+      label: "Picked Color History",
+      icon: expandedFeatures === "color-history" ? ChevronDown : ChevronRight,
+      onClick: () => {
+        setExpandedFeatures(
+          expandedFeatures === "color-history" ? null : "color-history"
+        )
+      },
+      disabled: false
+    },
+    {
+      label: "Saved Webpage Colors",
+      icon:
+        expandedFeatures === "saved-webpage-colors"
+          ? ChevronDown
+          : ChevronRight,
+      onClick: () => {
+        setExpandedFeatures(
+          expandedFeatures === "saved-webpage-colors"
+            ? null
+            : "saved-webpage-colors"
+        )
+      },
+      disabled: Object.keys(analyzer.savedWebpageColors).length === 0
+    }
+  ]
+
+  const renderColorHistory = () => {
+    return (
+      <ColorHistoryPanel
+        colorHistory={colorHistory}
+        onPick={(color, index) => {
+          const nextHsv = colorToHsv(color)
+          if (nextHsv) colorPicker.setHsv(nextHsv)
+          setCurrentColor(color)
+          copyToClipboard(color.hex, `history-${index}`)
+        }}
+        onClear={clearHistory}
+      />
+    )
+  }
+
   if (outsidePickActive) {
     return (
       <div className="w-[220px] bg-gray-200 px-2 py-1 font-sans text-sm">
@@ -173,10 +253,33 @@ function IndexPopup() {
   }
 
   return (
-    <div className="w-[460px] bg-gray-200 p-3 font-sans text-sm">
-      <div className="flex gap-4">
+    <div className="w-[280px] bg-gray-200 font-sans py-3">
+      <div className="flex flex-col gap-4">
+        <div className="flex-1 flex flex-col gap-3">
+          {/* New / Current Color */}
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1 w-full">
+              {FEATURES.map((feature) => (
+                <button
+                  key={feature.label}
+                  type="button"
+                  onClick={feature.onClick}
+                  disabled={feature.disabled}
+                  className="w-full px-3 py-1 text-sm cursor-pointer hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 flex items-center gap-1">
+                  <span className="inline-flex items-center gap-1.5">
+                    <feature.icon className="size-3" />
+                    {feature.label}
+                  </span>
+                  {feature.disabled && <AlertTriangle className="size-3" />}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
         {/* LEFT: Color Picker */}
-        <div className="flex gap-2">
+
+        <div
+          className={`flex flex-col items-center gap-2 px-3 ${expandedFeatures === "color-picker" ? "block" : "hidden"}`}>
           <ColorPickerPanel
             hsv={colorPicker.hsv}
             currentColor={currentColor}
@@ -196,78 +299,30 @@ function IndexPopup() {
             b={b}
           />
           {copiedField && <span className="text-green-600 text-xs">✓</span>}
-        </div>
+          <div className="flex items-center w-full">
+            <button
+              type="button"
+              onClick={handleAddToHistory}
+              className="w-full h-10 cursor-pointer flex items-center justify-center"
+              style={{ backgroundColor: currentColor?.hex || "#000" }}
+              title={currentColor?.hex || ""}>
+              <span className="text-xs text-gray-500">new</span>
+            </button>
 
-        {/* RIGHT: Color Info & History */}
-        <div className="flex-1 flex flex-col gap-3">
-          {/* New / Current Color */}
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-col gap-1 w-full">
-              <button
-                onClick={activatePicker}
-                disabled={pageRestricted}
-                className="w-full px-3 py-1 bg-white border border-gray-400 rounded text-xs cursor-pointer hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60">
-                <span className="inline-flex items-center gap-1">
-                  Pick Page Color
-                  {pageRestricted && (
-                    <AlertTriangle className="h-3 w-3 text-amber-500" />
-                  )}
-                </span>
-              </button>
-              <button
-                onClick={activateOutsidePicker}
-                className="w-full px-3 py-1 bg-white border border-gray-400 rounded text-xs cursor-pointer hover:bg-gray-50">
-                Pick Outside Browser
-              </button>
-              <button
-                onClick={analyzer.analyze}
-                className="w-full px-3 py-1 bg-white border border-gray-400 rounded text-xs cursor-pointer hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={analyzer.isAnalyzing || pageRestricted}>
-                {analyzer.isAnalyzing
-                  ? "Analyzing..."
-                  : "Analyze Webpage Colors"}
-                {pageRestricted && (
-                  <span className="ml-1 inline-flex items-center">
-                    <AlertTriangle className="h-3 w-3 text-amber-500" />
-                  </span>
-                )}
-              </button>
-              <button
-                onClick={handleAddToHistory}
-                className="w-full px-3 py-1 bg-white border border-gray-400 rounded text-xs cursor-pointer hover:bg-gray-50">
-                Add to History
-              </button>
-            </div>
-            <div className="flex items-center w-full">
-              <div className="text-center w-full">
-                <div className="text-xs text-gray-500 mb-0.5">new</div>
-                <div
-                  className="w-full h-10"
-                  style={{ backgroundColor: currentColor?.hex || "#000" }}
-                />
-              </div>
-              <div className="text-center w-full">
-                <div className="text-xs text-gray-500 mb-0.5">current</div>
-                <div
-                  className="w-full h-10"
-                  style={{ backgroundColor: colorHistory[0]?.hex || "#333" }}
-                />
-              </div>
-            </div>
+            <button
+              type="button"
+              className="w-full h-10 cursor-default flex items-center justify-center"
+              style={{ backgroundColor: colorHistory[0]?.hex || "#333" }}
+              title={colorHistory[0]?.hex || ""}>
+              <span className="text-xs text-gray-500">current</span>
+            </button>
           </div>
+          {renderColorHistory()}
         </div>
+        {/* RIGHT: Color Info & History */}
       </div>
       {/* Color History */}
-      <ColorHistoryPanel
-        colorHistory={colorHistory}
-        onPick={(color, index) => {
-          const nextHsv = colorToHsv(color)
-          if (nextHsv) colorPicker.setHsv(nextHsv)
-          setCurrentColor(color)
-          copyToClipboard(color.hex, `history-${index}`)
-        }}
-        onClear={clearHistory}
-      />
+      {expandedFeatures === "color-history" && renderColorHistory()}
       <AnalyzerPanel
         analyzedColors={analyzer.analyzedColors}
         selectedAnalyzedColor={analyzer.selectedAnalyzedColor}
