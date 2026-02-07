@@ -7,6 +7,8 @@ interface ColorEntry {
   timestamp: number
 }
 
+import { isRestrictedUrl } from "./utils/restricted-urls"
+
 // Listen for color picked events from injected script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "COLOR_PICKED" && message.color) {
@@ -33,6 +35,11 @@ chrome.runtime.onConnect.addListener((port) => {
 
 async function clearWebpageHighlights(tabId: number) {
   try {
+    const tab = await chrome.tabs.get(tabId)
+    const url = tab.url || tab.pendingUrl || ""
+    if (isRestrictedUrl(url)) {
+      return
+    }
     await chrome.scripting.executeScript({
       target: { tabId },
       func: () => {

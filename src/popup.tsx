@@ -4,6 +4,8 @@ import "~style.css"
 
 import { ColorHistoryPanel } from "./features/color-history/ColorHistoryPanel"
 import { useColorHistory } from "./features/color-history/useColorHistory"
+import { AlertTriangle } from "lucide-react"
+import { isRestrictedUrl } from "./utils/restricted-urls"
 import { ColorPickerPanel } from "./features/color-picker/ColorPickerPanel"
 import { useColorPicker } from "./features/color-picker/useColorPicker"
 import { pickOutsideBrowserColor } from "./features/pick-outside-browser-color"
@@ -17,6 +19,7 @@ function IndexPopup() {
   const [currentColor, setCurrentColor] = useState<ColorEntry | null>(null)
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [outsidePickActive, setOutsidePickActive] = useState(false)
+  const [pageRestricted, setPageRestricted] = useState(false)
   const colorPicker = useColorPicker({ h: 220, s: 66, v: 16 })
 
   const getCurrentColorFromHsv = useCallback((): ColorEntry => {
@@ -41,6 +44,14 @@ function IndexPopup() {
     return () => {
       port.disconnect()
     }
+  }, [])
+
+  useEffect(() => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tab = tabs?.[0]
+      const url = tab?.url || tab?.pendingUrl || ""
+      setPageRestricted(isRestrictedUrl(url))
+    })
   }, [])
 
   useEffect(() => {
@@ -83,6 +94,7 @@ function IndexPopup() {
   })
 
   const activatePicker = () => {
+    if (pageRestricted) return
     startPickPageColor(() => window.close())
   }
 
@@ -193,8 +205,14 @@ function IndexPopup() {
             <div className="flex flex-col gap-1 w-full">
               <button
                 onClick={activatePicker}
-                className="w-full px-3 py-1 bg-white border border-gray-400 rounded text-xs cursor-pointer hover:bg-gray-50">
-                Pick Page Color
+                disabled={pageRestricted}
+                className="w-full px-3 py-1 bg-white border border-gray-400 rounded text-xs cursor-pointer hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60">
+                <span className="inline-flex items-center gap-1">
+                  Pick Page Color
+                  {pageRestricted && (
+                    <AlertTriangle className="h-3 w-3 text-amber-500" />
+                  )}
+                </span>
               </button>
               <button
                 onClick={activateOutsidePicker}
@@ -203,11 +221,16 @@ function IndexPopup() {
               </button>
               <button
                 onClick={analyzer.analyze}
-                className="w-full px-3 py-1 bg-white border border-gray-400 rounded text-xs cursor-pointer hover:bg-gray-50"
-                disabled={analyzer.isAnalyzing}>
+                className="w-full px-3 py-1 bg-white border border-gray-400 rounded text-xs cursor-pointer hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={analyzer.isAnalyzing || pageRestricted}>
                 {analyzer.isAnalyzing
                   ? "Analyzing..."
                   : "Analyze Webpage Colors"}
+                {pageRestricted && (
+                  <span className="ml-1 inline-flex items-center">
+                    <AlertTriangle className="h-3 w-3 text-amber-500" />
+                  </span>
+                )}
               </button>
               <button
                 onClick={handleAddToHistory}
