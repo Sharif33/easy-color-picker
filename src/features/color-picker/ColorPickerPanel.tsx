@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react"
+
 import { rgbToHsl } from "../../popup/color-utils"
 import type { ColorEntry, HSV } from "../../popup/types"
 
@@ -26,6 +28,24 @@ export const ColorPickerPanel = ({
   g,
   b
 }: ColorPickerPanelProps) => {
+  const [gradientDimensions, setGradientDimensions] = useState({
+    width: 200,
+    height: 200
+  })
+
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (gradientRef.current) {
+        const rect = gradientRef.current.getBoundingClientRect()
+        setGradientDimensions({ width: rect.width, height: rect.height })
+      }
+    }
+
+    updateDimensions()
+    window.addEventListener("resize", updateDimensions)
+    return () => window.removeEventListener("resize", updateDimensions)
+  }, [gradientRef])
+
   return (
     <div className="flex flex-col gap-2">
       <div className="flex gap-3">
@@ -38,8 +58,8 @@ export const ColorPickerPanel = ({
           <div
             className="absolute w-3.5 h-3.5 border-2 border-white rounded-full shadow pointer-events-none"
             style={{
-              left: `${(hsv.s / 100) * 200 - 7}px`,
-              top: `${(1 - hsv.v / 100) * 200 - 7}px`
+              left: `${(hsv.s / 100) * gradientDimensions.width - 7}px`,
+              top: `${(1 - hsv.v / 100) * gradientDimensions.height - 7}px`
             }}
           />
         </div>
