@@ -1,33 +1,42 @@
-This is a [Plasmo extension](https://docs.plasmo.com/) project bootstrapped with [`plasmo init`](https://www.npmjs.com/package/plasmo).
+# Color Hub
 
-## Getting Started
+Extract colors, analyze palettes, and enhance your design workflow.
 
-First, run the development server:
+## Features
+- Pick colors from any page (via context menu and popup)
+- Save and organize palettes
+- Fast access in a compact popup UI
 
-```bash
-pnpm dev
-# or
-npm run dev
-```
+## Install (Development)
+1. Install dependencies: `pnpm install`
+2. Start the dev server: `pnpm dev`
+3. Load the extension in Chrome:
+   - Open `chrome://extensions`
+   - Enable Developer mode
+   - Click "Load unpacked" and select `build/chrome-mv3-dev`
 
-Open your browser and load the appropriate development build. For example, if you are developing for the chrome browser, using manifest v3, use: `build/chrome-mv3-dev`.
-
-You can start editing the popup by modifying `popup.tsx`. It should auto-update as you make changes. To add an options page, simply add a `options.tsx` file to the root of the project, with a react component default exported. Likewise to add a content page, add a `content.ts` file to the root of the project, importing some module and do some logic, then reload the extension on your browser.
-
-For further guidance, [visit our Documentation](https://docs.plasmo.com/)
-
-## Making production build
-
-Run the following:
-
+## Build (Production)
 ```bash
 pnpm build
-# or
-npm run build
 ```
+This creates a production bundle in `build/`.
 
-This should create a production bundle for your extension, ready to be zipped and published to the stores.
+## Permissions
+- `activeTab`: read the currently active tab on demand
+- `storage`: save palettes and settings
+- `unlimitedStorage`: store larger color histories if needed
+- `scripting`: inject scripts to sample colors
+- `contextMenus`: add right‑click menu actions
+- `host_permissions` `<all_urls>`: allow color sampling on any page
 
-## Submit to the webstores
+## Privacy
+This extension does not collect or transmit user data. All data stays local in your browser storage.
 
-The easiest way to deploy your Plasmo extension is to use the built-in [bpp](https://bpp.browser.market) GitHub action. Prior to using this action however, make sure to build your extension and upload the first version to the store to establish the basic credentials. Then, simply follow [this setup instruction](https://docs.plasmo.com/framework/workflows/submit) and you should be on your way for automated submission!
+## Contributing
+See `CONTRIBUTING.md` for workflow and guidelines.
+
+## License
+MIT — see `LICENSE`.
+
+## Release Notes
+See `RELEASE_NOTES.md` and `CHANGELOG.md`.
