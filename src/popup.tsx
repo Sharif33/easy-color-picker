@@ -8,7 +8,6 @@ import {
   BrushCleaning,
   ChevronDown,
   ChevronRight,
-  Disc,
   Heart,
   History,
   NotepadText,
@@ -21,7 +20,6 @@ import { useColorHistory } from "./features/color-history/useColorHistory"
 import { ColorPickerPanel } from "./features/color-picker/ColorPickerPanel"
 import { useColorPicker } from "./features/color-picker/useColorPicker"
 import { pickOutsideBrowserColor } from "./features/pick-outside-browser-color"
-import { startPickPageColor } from "./features/pick-page-color"
 import { AnalyzerPanel } from "./features/webpage-color-analyzer/AnalyzerPanel"
 import { useWebpageAnalyzer } from "./features/webpage-color-analyzer/useWebpageAnalyzer"
 import { colorToHsv, getColorFromHsv, hsvToRgb } from "./popup/color-utils"
@@ -107,11 +105,6 @@ function IndexPopup() {
     }
   })
 
-  const activatePicker = () => {
-    if (pageRestricted) return
-    startPickPageColor(() => window.close())
-  }
-
   const activateOutsidePicker = async () => {
     setOutsidePickActive(true)
     await pickOutsideBrowserColor()
@@ -182,14 +175,8 @@ function IndexPopup() {
 
   const FEATURES = [
     {
-      label: "Pick Active Page Color",
+      label: "Pick Color",
       icon: Pipette,
-      onClick: activatePicker,
-      disabled: pageRestricted
-    },
-    {
-      label: "Pick Outside Browser Color",
-      icon: Disc,
       onClick: activateOutsidePicker,
       disabled: false
     },

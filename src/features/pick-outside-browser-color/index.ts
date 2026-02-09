@@ -37,7 +37,11 @@ export const pickOutsideBrowserColor = async (): Promise<ColorEntry | null> => {
 
     return color
   } catch (error) {
-    console.warn("EyeDropper failed or was cancelled:", error)
+    const isUserCancelled =
+      error instanceof DOMException && error.name === "AbortError"
+    if (!isUserCancelled) {
+      console.warn("EyeDropper failed:", error)
+    }
     return null
   }
 }
