@@ -12,7 +12,8 @@ import {
   History,
   NotepadText,
   Palette,
-  Pipette
+  Pipette,
+  X
 } from "lucide-react"
 
 import { ColorHistoryPanel } from "./features/color-history/ColorHistoryPanel"
@@ -42,12 +43,14 @@ function IndexPopup() {
     setCurrentColor(getCurrentColorFromHsv())
   }, [colorPicker.hsv, getCurrentColorFromHsv])
 
-  const { colorHistory, setColorHistory } = useColorHistory({
-    onPickedColor: (picked) => {
+  const { colorHistory, setColorHistory, lastPickedColor } = useColorHistory({
+    onPickedColor: (picked, source) => {
       const nextHsv = colorToHsv(picked)
       if (nextHsv) colorPicker.setHsv(nextHsv)
       setCurrentColor(picked)
-      void copyToClipboard(picked.hex, "hex")
+      if (source === "storage") {
+        void copyToClipboard(picked.hex, "hex")
+      }
     }
   })
 
@@ -101,7 +104,6 @@ function IndexPopup() {
         hsl: undefined,
         timestamp: Date.now()
       })
-      copyToClipboard(color.hex, `analyzed-${color.hex}`)
     }
   })
 
@@ -146,6 +148,10 @@ function IndexPopup() {
     } catch (error) {
       console.warn("Clipboard write failed:", error)
     }
+  }
+
+  const clearLastPickedColor = async () => {
+    await chrome.storage.local.remove("lastPickedColor")
   }
 
   const handleAddToHistory = () => {
@@ -258,6 +264,35 @@ function IndexPopup() {
         </h1>
       </div>
       <div className="flex flex-col gap-3">
+        {lastPickedColor && (
+          <div className="px-3 pt-3 font-mono flex items-center justify-between gap-2">
+            <span className="text-[11px] text-gray-700  tracking-wide flex items-center gap-1">
+              <History className="size-3" />
+              Last Picked
+            </span>
+
+            <span className="inline-flex items-center gap-2">
+              <span className="inline-flex items-center gap-2">
+                <span
+                  className="h-4 w-4 rounded border border-gray-300"
+                  style={{ backgroundColor: lastPickedColor.hex }}
+                />
+                {lastPickedColor.hex}
+              </span>
+              <button
+                type="button"
+                title="Clear last picked color"
+                onClick={(event) => {
+                  event.preventDefault()
+                  event.stopPropagation()
+                  void clearLastPickedColor()
+                }}
+                className="inline-flex items-center justify-center rounded text-gray-500 hover:text-red-600">
+                <X className="size-3" />
+              </button>
+            </span>
+          </div>
+        )}
         <div className="flex-1 flex flex-col gap-3">
           {/* New / Current Color */}
           <div className="flex flex-col gap-2">
@@ -292,7 +327,7 @@ function IndexPopup() {
         </div>
 
         <div
-          className={`flex flex-col items-center gap-2 px-3 ${expandedFeatures === "color-picker" ? "block" : "hidden"}`}>
+          className={`flex flex-col items-center gap-2 px-3 w-full ${expandedFeatures === "color-picker" ? "block" : "hidden"}`}>
           <ColorPickerPanel
             hsv={colorPicker.hsv}
             currentColor={currentColor}
@@ -315,7 +350,7 @@ function IndexPopup() {
             g={g}
             b={b}
           />
-          {renderColorHistory()}
+          <div className="w-full">{renderColorHistory()}</div>
         </div>
 
         {expandedFeatures === "color-history" && (
@@ -335,6 +370,7 @@ function IndexPopup() {
           onSave={handleAnalyzerSave}
           onCancel={handleAnalyzerCancel}
           onDeleteDomain={analyzer.deleteDomain}
+          onCopy={copyToClipboard}
           onPickSaved={(color, key) => {
             const nextHsv = colorToHsv({
               hex: color.hex,

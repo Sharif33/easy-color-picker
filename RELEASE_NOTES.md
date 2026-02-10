@@ -1,5 +1,16 @@
 # Release Notes
 
+## 1.0.2 (2026-02-10)
+UI and state improvements for picked colors, history visibility, and analyzer interactions.
+
+Highlights:
+- Added extension badge state sync with `lastPickedColor` on install/startup/storage updates
+- Badge now displays the last picked color and clears automatically when the value is removed
+- Added a `Last Picked` section in popup with preview and one-click clear action
+- Updated color history and saved webpage colors to larger grid tiles with inline HEX labels
+- Improved contrast-aware text rendering on color tiles for better readability
+- Enabled click-to-copy on analyzer RGB and HEX fields
+
 ## 1.0.1 (2026-02-09)
 Updates to popup picking flow and picker UX.
 
