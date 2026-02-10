@@ -5,7 +5,9 @@ Extract colors, analyze palettes, and enhance your design workflow.
 ## Features
 - Pick colors from anywhere using `Pick Color` (EyeDropper)
 - Analyze webpage CSS colors and save palettes by domain
-- Keep a picked-color history and quick-copy values
+- Keep a picked-color history with larger, readable swatches
+- Copy analyzed RGB/HEX values directly from the analyzer fields
+- Keep the extension badge and popup `Last Picked` color in sync
 - Fast access in a compact popup UI
 
 ## Install (Development)
