@@ -1,3 +1,5 @@
+import { getContrastTextColor } from "~utils/get-contrast-text-color"
+
 import type { AnalyzedColor } from "./index"
 
 interface AnalyzerPanelProps {
@@ -14,6 +16,7 @@ interface AnalyzerPanelProps {
   onCancel: () => void
   onDeleteDomain: (domain: string) => void
   onPickSaved: (color: AnalyzedColor, key: string) => void
+  onCopy: (text: string, field: string) => void
 }
 
 export const AnalyzerPanel = ({
@@ -29,7 +32,8 @@ export const AnalyzerPanel = ({
   onSave,
   onCancel,
   onDeleteDomain,
-  onPickSaved
+  onPickSaved,
+  onCopy
 }: AnalyzerPanelProps) => {
   return (
     <div className="px-3 flex flex-col gap-3">
@@ -47,7 +51,7 @@ export const AnalyzerPanel = ({
           <div className="text-[11px] font-semibold uppercase tracking-wide text-gray-600 mb-1">
             CSS Colors on This Page
           </div>
-          <div className="grid grid-cols-12 gap-1 rounded border border-gray-200 bg-gray-50 p-1">
+          <div className="grid grid-cols-10 rounded border border-gray-200 bg-gray-50 p-1">
             {analyzedColors.map((color, index) => {
               const isSelected = selectedAnalyzedColor?.hex === color.hex
               return (
@@ -55,7 +59,7 @@ export const AnalyzerPanel = ({
                   key={`${color.hex}-${index}`}
                   type="button"
                   onClick={() => onSelectColor(color)}
-                  title={`${color.hex} • ${color.count}`}
+                  title={color.hex}
                   className={`h-6 w-full border ${
                     isSelected ? "border-red-500" : "border-gray-200"
                   }`}
@@ -69,22 +73,32 @@ export const AnalyzerPanel = ({
               type="text"
               readOnly
               value={selectedAnalyzedColor?.rgb || ""}
-              className="flex-1 px-2 py-1 border border-gray-300 font-mono text-[11px] bg-gray-50"
+              onClick={() =>
+                selectedAnalyzedColor?.rgb &&
+                onCopy(selectedAnalyzedColor.rgb, "analyzed-rgb")
+              }
+              className="flex-1 px-2 py-1 border border-gray-300 font-mono text-[11px] bg-gray-50 cursor-pointer hover:bg-gray-100"
+              title="Click to copy RGB value"
             />
             <input
               type="text"
               readOnly
               value={selectedAnalyzedColor?.hex || ""}
-              className="w-24 px-2 py-1 border border-gray-300 font-mono text-[11px] bg-gray-50"
+              onClick={() =>
+                selectedAnalyzedColor?.hex &&
+                onCopy(selectedAnalyzedColor.hex, "analyzed-hex")
+              }
+              className="w-24 px-2 py-1 border border-gray-300 font-mono text-[11px] bg-gray-50 cursor-pointer hover:bg-gray-100"
+              title="Click to copy HEX value"
             />
           </div>
           {selectedAnalyzedColor?.selectors?.length ? (
-            <div className="mt-2 max-h-28 overflow-auto rounded border border-gray-200 bg-gray-50 p-1 space-y-1">
+            <div className="mt-2 max-h-28 overflow-auto rounded border border-gray-200 bg-gray-50 p-1 flex flex-wrap gap-0.5">
               {selectedAnalyzedColor.selectors.map((selector, idx) => (
                 <div
                   key={`${selector}-${idx}`}
                   title={selector}
-                  className="rounded border border-gray-200 bg-white px-2 py-1 text-[10px] font-mono text-gray-700 truncate">
+                  className="rounded border bg-white p-0.5 text-[9px] font-mono text-gray-700 w-fit flex items-center justify-center leading-none">
                   {selector}
                 </div>
               ))}
@@ -117,7 +131,7 @@ export const AnalyzerPanel = ({
           <div className="text-[11px] font-semibold uppercase tracking-wide text-gray-600 mb-1">
             Saved Webpage Colors
           </div>
-          <div className="space-y-2 max-h-32 overflow-auto">
+          <div className="space-y-2 max-h-40 overflow-auto">
             {Object.entries(savedWebpageColors).map(([domain, colors]) => (
               <div
                 key={domain}
@@ -133,16 +147,22 @@ export const AnalyzerPanel = ({
                     Delete
                   </button>
                 </div>
-                <div className="mt-2 grid grid-cols-10 gap-1">
-                  {colors.slice(0, 20).map((color, idx) => (
+                <div className="mt-2 grid grid-cols-4">
+                  {colors.map((color, idx) => (
                     <button
                       key={`${domain}-${color.hex}-${idx}`}
                       type="button"
                       onClick={() => onPickSaved(color, `${domain}-${idx}`)}
-                      title={`${color.hex} • ${color.count}`}
-                      className="h-4 w-full border border-gray-200"
-                      style={{ backgroundColor: color.hex }}
-                    />
+                      title={color.hex}
+                      className="h-10 border-gray-300 border-[0.5px] flex items-end justify-center"
+                      style={{
+                        backgroundColor: color.hex,
+                        color: getContrastTextColor(color.hex) || "#000"
+                      }}>
+                      <span className="text-[9px] font-mono font-medium w-full text-center">
+                        {color.hex}
+                      </span>
+                    </button>
                   ))}
                 </div>
               </div>

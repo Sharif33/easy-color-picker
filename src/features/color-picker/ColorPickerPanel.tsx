@@ -1,6 +1,8 @@
 import { Check, Copy } from "lucide-react"
 import { useEffect, useState } from "react"
 
+import { getContrastTextColor } from "~utils/get-contrast-text-color"
+
 import { hexToRgb, rgbToHsl, rgbToHsv } from "../../popup/color-utils"
 import type { ColorEntry, HSV } from "../../popup/types"
 
@@ -337,7 +339,13 @@ export const ColorPickerPanel = ({
             className="w-full h-10 cursor-pointer flex items-center justify-center"
             style={{ backgroundColor: currentColor?.hex || "#000" }}
             title={currentColor?.hex || ""}>
-            <span className="text-xs text-gray-500">new</span>
+            <span
+              className="text-xs"
+              style={{
+                color: getContrastTextColor(currentColor?.hex || "#000")
+              }}>
+              new
+            </span>
           </button>
 
           <button
@@ -345,7 +353,13 @@ export const ColorPickerPanel = ({
             className="w-full h-10 cursor-default flex items-center justify-center"
             style={{ backgroundColor: firstHistoryColor?.hex || "#333" }}
             title={firstHistoryColor?.hex || ""}>
-            <span className="text-xs text-gray-500">current</span>
+            <span
+              className="text-xs"
+              style={{
+                color: getContrastTextColor(firstHistoryColor?.hex || "#000")
+              }}>
+              current
+            </span>
           </button>
         </div>
       </div>
