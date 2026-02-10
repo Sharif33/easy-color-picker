@@ -328,7 +328,7 @@ function IndexPopup() {
         </div>
 
         <div
-          className={`flex flex-col items-center gap-2 px-3 ${expandedFeatures === "color-picker" ? "block" : "hidden"}`}>
+          className={`flex flex-col items-center gap-2 px-3 w-full ${expandedFeatures === "color-picker" ? "block" : "hidden"}`}>
           <ColorPickerPanel
             hsv={colorPicker.hsv}
             currentColor={currentColor}
@@ -351,7 +351,7 @@ function IndexPopup() {
             g={g}
             b={b}
           />
-          {renderColorHistory()}
+          <div className="w-full">{renderColorHistory()}</div>
         </div>
 
         {expandedFeatures === "color-history" && (
