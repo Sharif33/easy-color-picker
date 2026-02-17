@@ -1,5 +1,6 @@
 import { Pipette } from "lucide-react"
 
+import { pickOutsideBrowserColor } from "~features/pick-outside-browser-color"
 import { isValidPartialHex } from "~utils/color-utils"
 
 interface ColorCardProps {
@@ -22,9 +23,34 @@ export function ColorCard({
   swatches
 }: ColorCardProps) {
   const handleInputChange = (value: string) => {
+    if (!value) {
+      onInputChange("#")
+      return
+    }
+
     const next = value.startsWith("#") ? value : `#${value}`
     if (isValidPartialHex(next)) {
       onInputChange(next.toLowerCase())
+    }
+  }
+
+  const handlePaste = (event: React.ClipboardEvent<HTMLInputElement>) => {
+    event.preventDefault()
+    const pasted = event.clipboardData.getData("text").trim()
+
+    // Extract hex color from pasted text
+    let hexColor = pasted.replace(/^(#|0x|\\x)/i, "")
+    hexColor = hexColor.replace(/[^0-9a-fA-F]/g, "").slice(0, 6)
+
+    if (hexColor.length > 0) {
+      onInputChange(`#${hexColor.toLowerCase()}`)
+    }
+  }
+
+  const handlePickColor = async () => {
+    const pickedColor = await pickOutsideBrowserColor()
+    if (pickedColor) {
+      onInputChange(pickedColor.hex.toLowerCase())
     }
   }
 
@@ -37,16 +63,13 @@ export function ColorCard({
           color: textColor
         }}>
         <div className="mb-16 flex justify-end">
-          <label className="relative inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-transparent">
+          <button
+            type="button"
+            onClick={handlePickColor}
+            aria-label={`Pick ${label.toLowerCase()} color`}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-transparent transition hover:scale-110 hover:border-current/50 active:scale-95">
             <Pipette className="size-5" />
-            <input
-              type="color"
-              value={color}
-              onChange={(event) => onColorChange(event.target.value)}
-              aria-label={`${label} color`}
-              className="absolute inset-0 cursor-pointer opacity-0"
-            />
-          </label>
+          </button>
         </div>
         <p className="text-base font-medium">{label}</p>
         <p className="mt-2 text-lg font-semibold leading-none tracking-tight">
@@ -54,9 +77,13 @@ export function ColorCard({
         </p>
       </div>
       <input
+        type="text"
         value={inputValue}
         onChange={(event) => handleInputChange(event.target.value)}
-        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-2 ring-transparent transition focus:border-slate-400 focus:ring-slate-300"
+        onPaste={handlePaste}
+        placeholder="#000000"
+        maxLength={7}
+        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 outline-none ring-2 ring-transparent transition focus:border-slate-400 focus:ring-slate-300"
       />
       <div className="flex flex-wrap gap-2">
         {swatches.map((swatch) => (

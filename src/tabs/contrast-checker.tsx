@@ -90,7 +90,9 @@ function ContrastCheckerPage() {
                 swatches={swatches}
               />
 
-              <SwapButton onSwap={handleSwapColors} />
+              <div className="flex pt-20">
+                <SwapButton onSwap={handleSwapColors} />
+              </div>
 
               <ColorCard
                 label="Background"
