@@ -8,6 +8,7 @@ import {
   BrushCleaning,
   ChevronDown,
   ChevronRight,
+  Eye,
   Heart,
   History,
   NotepadText,
@@ -140,6 +141,11 @@ function IndexPopup() {
     })
   }
 
+  const openContrastChecker = () => {
+    const url = chrome.runtime.getURL("tabs/contrast-checker.html")
+    chrome.tabs.create({ url })
+  }
+
   const copyToClipboard = async (text: string, field: string) => {
     try {
       await navigator.clipboard.writeText(text)
@@ -191,6 +197,12 @@ function IndexPopup() {
       icon: BrushCleaning,
       onClick: analyzer.analyze,
       disabled: analyzer.isAnalyzing || pageRestricted
+    },
+    {
+      label: "Color Contrast Checker",
+      icon: Eye,
+      onClick: openContrastChecker,
+      disabled: false
     },
     {
       label: "Picked Color History",
