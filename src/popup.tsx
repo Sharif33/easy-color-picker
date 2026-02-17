@@ -8,12 +8,12 @@ import {
   BrushCleaning,
   ChevronDown,
   ChevronRight,
-  Eye,
   Heart,
   History,
   NotepadText,
   Palette,
   Pipette,
+  TestTubes,
   X
 } from "lucide-react"
 
@@ -200,7 +200,7 @@ function IndexPopup() {
     },
     {
       label: "Color Contrast Checker",
-      icon: Eye,
+      icon: TestTubes,
       onClick: openContrastChecker,
       disabled: false
     },
