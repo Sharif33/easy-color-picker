@@ -27,12 +27,30 @@ import { colorToHsv, getColorFromHsv, hsvToRgb } from "./popup/color-utils"
 import type { ColorEntry } from "./popup/types"
 import { isRestrictedUrl } from "./utils/restricted-urls"
 
+interface ContextAnalyticsData {
+  selector: string
+  width: number
+  height: number
+  color: string
+  background: string
+  font: string
+  padding: string
+  role: string
+  name: string
+  keyboardFocusable: boolean
+  timestamp: number
+}
+
+const CONTEXT_ANALYTICS_STORAGE_KEY = "CONTEXT_ANALYTICS_DATA"
+
 function IndexPopup() {
   const [currentColor, setCurrentColor] = useState<ColorEntry | null>(null)
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [outsidePickActive, setOutsidePickActive] = useState(false)
   const [pageRestricted, setPageRestricted] = useState(false)
   const [expandedFeatures, setExpandedFeatures] = useState<string | null>(null)
+  const [contextAnalytics, setContextAnalytics] =
+    useState<ContextAnalyticsData | null>(null)
   const colorPicker = useColorPicker({ h: 220, s: 66, v: 16 })
 
   const getCurrentColorFromHsv = useCallback((): ColorEntry => {
@@ -67,6 +85,23 @@ function IndexPopup() {
       const url = tab?.url || tab?.pendingUrl || ""
       setPageRestricted(isRestrictedUrl(url))
     })
+  }, [])
+
+  useEffect(() => {
+    chrome.storage.local.get([CONTEXT_ANALYTICS_STORAGE_KEY], (result) => {
+      const payload = result[CONTEXT_ANALYTICS_STORAGE_KEY]
+      setContextAnalytics(payload ?? null)
+    })
+    
+    const listener = (changes: { [key: string]: chrome.storage.StorageChange }) => {
+      if (CONTEXT_ANALYTICS_STORAGE_KEY in changes) {
+        const newValue = changes[CONTEXT_ANALYTICS_STORAGE_KEY].newValue
+        setContextAnalytics(newValue ?? null)
+      }
+    }
+    
+    chrome.storage.onChanged.addListener(listener)
+    return () => chrome.storage.onChanged.removeListener(listener)
   }, [])
 
   useEffect(() => {
@@ -388,6 +423,104 @@ function IndexPopup() {
             copyToClipboard(color.hex, `saved-${key}`)
           }}
         />
+
+        {contextAnalytics && (
+          <div className="px-3 pb-3">
+            <div className="rounded border border-gray-300 bg-white p-2">
+              <div className="flex items-center justify-between mb-1">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-gray-600">
+                  Context Analytics
+                </div>
+                <div className="text-[9px] text-gray-500">
+                  {(() => {
+                    const age = Date.now() - contextAnalytics.timestamp
+                    const seconds = Math.floor(age / 1000)
+                    if (seconds < 5) return "just now"
+                    if (seconds < 60) return `${seconds}s ago`
+                    return `${Math.floor(seconds / 60)}m ago`
+                  })()}
+                </div>
+              </div>
+              <div className="grid grid-cols-[auto,1fr] gap-x-3 gap-y-1 text-[11px]">
+                <div className="text-gray-500 text-wrap">Selector</div>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(contextAnalytics.selector, "selector")}
+                  className="font-mono break-all text-left hover:text-sky-600 cursor-pointer"
+                  title="Click to copy">
+                  {contextAnalytics.selector}
+                  {copiedField === "selector" && (
+                    <span className="ml-1 text-green-600">✓</span>
+                  )}
+                </button>
+                <div className="text-gray-500">Size</div>
+                <div>{`${contextAnalytics.width.toFixed(2)} x ${contextAnalytics.height.toFixed(2)}`}</div>
+                <div className="text-gray-500">Color</div>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(contextAnalytics.color, "context-color")}
+                  className="inline-flex items-center gap-1 hover:text-sky-600 cursor-pointer"
+                  title="Click to copy">
+                  <span
+                    className="w-4 h-4 rounded border border-gray-300"
+                    style={{ backgroundColor: contextAnalytics.color }}
+                  />
+                  {contextAnalytics.color}
+                  {copiedField === "context-color" && (
+                    <span className="ml-1 text-green-600">✓</span>
+                  )}
+                </button>
+                <div className="text-gray-500">Background</div>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(contextAnalytics.background, "context-bg")}
+                  className="inline-flex items-center gap-1 hover:text-sky-600 cursor-pointer"
+                  title="Click to copy">
+                  <span
+                    className="w-4 h-4 rounded border border-gray-300"
+                    style={{ backgroundColor: contextAnalytics.background }}
+                  />
+                  {contextAnalytics.background}
+                  {copiedField === "context-bg" && (
+                    <span className="ml-1 text-green-600">✓</span>
+                  )}
+                </button>
+                <div className="text-gray-500">Font</div>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(contextAnalytics.font, "context-font")}
+                  className="text-left hover:text-sky-600 cursor-pointer"
+                  title="Click to copy">
+                  {contextAnalytics.font}
+                  {copiedField === "context-font" && (
+                    <span className="ml-1 text-green-600">✓</span>
+                  )}
+                </button>
+                <div className="text-gray-500">Padding</div>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(contextAnalytics.padding, "context-padding")}
+                  className="text-left hover:text-sky-600 cursor-pointer"
+                  title="Click to copy">
+                  {contextAnalytics.padding}
+                  {copiedField === "context-padding" && (
+                    <span className="ml-1 text-green-600">✓</span>
+                  )}
+                </button>
+                <div className="text-gray-500">Role</div>
+                <div>{contextAnalytics.role}</div>
+                <div className="text-gray-500 text-wrap">Name</div>
+                <div className="break-all">{contextAnalytics.name || "--"}</div>
+                <div className="text-gray-500">Keyboard</div>
+                <div>
+                  {contextAnalytics.keyboardFocusable
+                    ? "Focusable"
+                    : "Not focusable"}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       {/* footer */}
       <div className="p-3 text-xs text-gray-500 flex items-center justify-center gap-1">
