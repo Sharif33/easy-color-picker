@@ -2,8 +2,7 @@ import { useState } from "react"
 
 import "~style.css"
 
-import logo from "data-base64:~assets/color-hub-logo.png"
-
+import ColorHubLogo from "~components/color hub/logo"
 import { ColorCard } from "~features/contrast-checker/ColorCard"
 import { ColorPreview } from "~features/contrast-checker/ColorPreview"
 import { PaletteSelector } from "~features/contrast-checker/PaletteSelector"
@@ -46,14 +45,13 @@ function ContrastCheckerPage() {
     <div
       className="min-h-screen w-full bg-[#f3f6fb] text-slate-900"
       style={{ fontFamily: "'Inter', sans-serif" }}>
-      <nav className="sticky top-0 z-10 flex items-center justify-between gap-4 h-16">
-        <div className="flex items-center gap-1 container mx-auto">
-          <img src={logo} alt="Color Hub" className="size-6" />
-          <h1 className="text-lg font-mono tracking-wider">color_hub</h1>
+      <nav className="sticky top-0 z-10 flex items-center justify-between gap-4 h-20">
+        <div className="container mx-auto">
+          <ColorHubLogo size={32} className="text-2xl font-medium" />
         </div>
       </nav>
 
-      <div className="container mx-auto flex flex-col gap-6 mt-6">
+      <div className="container mx-auto flex flex-col gap-6 mt-2">
         <h2 className="text-sm font-semibold tracking-[0.2em] uppercase text-slate-900">
           Color Contrast Checker
         </h2>
