@@ -36,11 +36,13 @@ export const usePaletteColors = (paletteSource: PaletteSource) => {
   }, [])
 
   const swatches =
-    paletteSource === "color-history"
-      ? historyHexes
-      : paletteSource === "webpage-colors"
-        ? webpageHexes
-        : uniqueNormalizedHexes([...historyHexes, ...webpageHexes])
+    paletteSource === "saved-pairs"
+      ? []
+      : paletteSource === "color-history"
+        ? historyHexes
+        : paletteSource === "webpage-colors"
+          ? webpageHexes
+          : uniqueNormalizedHexes([...historyHexes, ...webpageHexes])
 
   return swatches
 }

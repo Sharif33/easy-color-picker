@@ -43,7 +43,7 @@ export const hslToRgb = (
   }
 }
 
-const hslToHex = (h: number, s: number, l: number): string => {
+export const hslToHex = (h: number, s: number, l: number): string => {
   const { r, g, b } = hslToRgb(h, s, l)
   return rgbToHex(r, g, b)
 }
@@ -88,52 +88,127 @@ export const formatHsl = (r: number, g: number, b: number): string => {
   return `hsl(${h}, ${s}%, ${l}%)`
 }
 
-const RGB_RE = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/i
-const HSL_RE = /^hsla?\(\s*([\d.]+)[\s,]+([\d.]+)%?[\s,]+([\d.]+)%?/i
+const RGB_RE =
+  /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:[\s,/]+([\d.]+%?))?\s*\)/i
+const HSL_RE =
+  /^hsla?\(\s*([\d.]+)[\s,]+([\d.]+)%?[\s,]+([\d.]+)%?(?:[\s,/]+([\d.]+%?))?\s*\)/i
+const HEX8_RE = /^#?([0-9a-fA-F]{8})$/
+const HEX4_RE = /^#?([0-9a-fA-F]{4})$/
+
+export interface ParsedColor {
+  hex: string
+  alpha: number
+}
+
+const parseAlphaToken = (token: string | undefined): number => {
+  if (!token) return 1
+  return token.endsWith("%")
+    ? clamp(parseFloat(token) / 100, 0, 1)
+    : clamp(parseFloat(token), 0, 1)
+}
 
 /**
- * Attempts to parse a color string in hex, rgb(), or hsl() format.
- * Returns a normalized 7-char hex string, or `null` if unparseable.
+ * Parse a color string and return both the opaque hex and the alpha channel.
+ * Supports hex (3/4/6/8), rgb(a), and hsl(a).
  */
-export const parseColor = (input: string): string | null => {
+export const parseColorWithAlpha = (input: string): ParsedColor | null => {
   const raw = input.trim()
   if (!raw) return null
 
   const rgbMatch = raw.match(RGB_RE)
   if (rgbMatch) {
-    return rgbToHex(
-      parseFloat(rgbMatch[1]),
-      parseFloat(rgbMatch[2]),
-      parseFloat(rgbMatch[3])
-    )
+    return {
+      hex: rgbToHex(
+        parseFloat(rgbMatch[1]),
+        parseFloat(rgbMatch[2]),
+        parseFloat(rgbMatch[3])
+      ),
+      alpha: parseAlphaToken(rgbMatch[4])
+    }
   }
 
   const hslMatch = raw.match(HSL_RE)
   if (hslMatch) {
-    return hslToHex(
-      parseFloat(hslMatch[1]),
-      parseFloat(hslMatch[2]),
-      parseFloat(hslMatch[3])
-    )
+    return {
+      hex: hslToHex(
+        parseFloat(hslMatch[1]),
+        parseFloat(hslMatch[2]),
+        parseFloat(hslMatch[3])
+      ),
+      alpha: parseAlphaToken(hslMatch[4])
+    }
+  }
+
+  const hex8Match = raw.match(HEX8_RE)
+  if (hex8Match) {
+    const h = hex8Match[1]
+    const hex = `#${h.slice(0, 6)}`.toLowerCase()
+    const alpha = clamp(parseInt(h.slice(6, 8), 16) / 255, 0, 1)
+    return { hex, alpha }
+  }
+
+  const hex4Match = raw.match(HEX4_RE)
+  if (hex4Match) {
+    const [r, g, b, a] = hex4Match[1]
+    const hex = `#${r}${r}${g}${g}${b}${b}`.toLowerCase()
+    const alpha = clamp(parseInt(`${a}${a}`, 16) / 255, 0, 1)
+    return { hex, alpha }
   }
 
   const withHash = raw.startsWith("#") ? raw : `#${raw}`
   const cleaned = `#${withHash.slice(1).replace(/[^0-9a-fA-F]/g, "")}`
   if (cleaned.length === 4) {
     const [, r, g, b] = cleaned
-    return `#${r}${r}${g}${g}${b}${b}`.toLowerCase()
+    return { hex: `#${r}${r}${g}${g}${b}${b}`.toLowerCase(), alpha: 1 }
   }
-  if (cleaned.length === 7) return cleaned.toLowerCase()
+  if (cleaned.length === 7) return { hex: cleaned.toLowerCase(), alpha: 1 }
 
   return null
+}
+
+/**
+ * Attempts to parse a color string in hex, rgb(), or hsl() format.
+ * Returns a normalized 7-char hex string, or `null` if unparseable.
+ */
+export const parseColor = (input: string): string | null => {
+  const result = parseColorWithAlpha(input)
+  return result ? result.hex : null
+}
+
+/**
+ * Alpha-composite a foreground RGBA over an opaque background,
+ * returning the resulting opaque hex.
+ */
+export const alphaBlend = (
+  fgHex: string,
+  fgAlpha: number,
+  bgHex: string
+): string => {
+  if (fgAlpha >= 1) return fgHex
+  const fg = hexToRgb(fgHex)
+  const bg = hexToRgb(bgHex)
+  const a = clamp(fgAlpha, 0, 1)
+  return rgbToHex(
+    Math.round(fg.r * a + bg.r * (1 - a)),
+    Math.round(fg.g * a + bg.g * (1 - a)),
+    Math.round(fg.b * a + bg.b * (1 - a))
+  )
 }
 
 export const normalizeHex = (value: string, fallback: string): string =>
   parseColor(value) ?? fallback
 
+export const normalizeWithAlpha = (
+  value: string,
+  fallback: string
+): ParsedColor => {
+  const parsed = parseColorWithAlpha(value)
+  return parsed ?? { hex: fallback, alpha: 1 }
+}
+
 export const isValidPartialHex = (value: string): boolean => {
   if (!value.startsWith("#")) return false
-  return /^#[0-9a-fA-F]{0,6}$/.test(value)
+  return /^#[0-9a-fA-F]{0,8}$/.test(value)
 }
 
 export const hexToRgb = (hex: string): { r: number; g: number; b: number } => {
